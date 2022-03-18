@@ -11,125 +11,129 @@ export class GitDB {
         this.octokit = new Octokit({ auth: `${options.token}` });
     }
 
-    async list(callback) {
-        let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
-        console.log(tree);
-        let q = queue(1);
-        tree.filter(item => { return item.path.match(/json$/) }).forEach(item => {
-            q.defer(async (cb) => {
+    async list() {
+        return new Promise(async (resolve, reject) => {
+            let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
+            // console.log(tree);
+            let q = queue(1);
+            tree.filter(item => { return item.path.match(/json$/) }).forEach(item => {
+                q.defer(async (cb) => {
+                    const { data } = await this.octokit.rest.repos.getContent({
+                        mediaType: {
+                            format: "raw",
+                        },
+                        owner: `${this.options.owner}`,
+                        repo: `${this.options.repo}`,
+                        path: `${item.path}`,
+                        ref: `${this.options.branch}`
+                    });
+                    return cb(null, { path: item.path, data: JSON.parse(data) });
+                })
+            })
+
+            q.awaitAll((err, res) => {
+                if (err) reject(err);
+                resolve(res);
+            })
+        });
+    }
+
+
+    async get(id) {
+        return new Promise(async (resolve, reject) => {
+            try {
                 const { data } = await this.octokit.rest.repos.getContent({
                     mediaType: {
                         format: "raw",
                     },
                     owner: `${this.options.owner}`,
                     repo: `${this.options.repo}`,
-                    path: `${item.path}`,
+                    path: `${id}`,
                     ref: `${this.options.branch}`
                 });
-                return cb(null, { path: item.path, data: JSON.parse(data) });
-            })
+                resolve(JSON.parse(data));
+            } catch (error) {
+                reject(error);
+            }
         })
 
-        q.awaitAll((err, res) => {
-            console.log('err:', err);
-            console.log('res', res);
-
-            if (err) return callback(err);
-            return callback(null, res);
-        })
     }
 
+    async add(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                var id = hat() + '.json';
+                await this.octokit.rest.repos.createOrUpdateFileContents(
+                    {
+                        owner: this.options.owner,
+                        repo: this.options.repo,
+                        path: `${id}`,
+                        message: `Add ${id}`,
+                        content: Base64.encode(JSON.stringify(data)),
+                        branch: this.options.branch
+                    }
+                )
+                resolve(id);
+            } catch (error) {
+                reject(error);
+            }
+        });
 
-    async get(id, callback) {
-        try {
-            const { data } = await this.octokit.rest.repos.getContent({
-                mediaType: {
-                    format: "raw",
-                },
-                owner: `${this.options.owner}`,
-                repo: `${this.options.repo}`,
-                path: `${id}`,
-                ref: `${this.options.branch}`
-            });
-            return callback(null, JSON.parse(data));
-        } catch (error) {
-            return callback(error);
-        }
     }
 
-    async add(data, callback) {
-        try {
-            var id = hat() + '.json';
-            await this.octokit.rest.repos.createOrUpdateFileContents(
-                {
-                    owner: this.options.owner,
-                    repo: this.options.repo,
+    async update(id, data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const { data: { sha } } = await this.octokit.rest.repos.getContent({
+                    owner: `${this.options.owner}`,
+                    repo: `${this.options.repo}`,
                     path: `${id}`,
-                    message: `Add ${id}`,
-                    content: Base64.encode(JSON.stringify(data)),
-                    branch: this.options.branch
-                }
-            )
-            return callback(null, null);
-        } catch (error) {
-            return callback(error);
-        }
+                    ref: `${this.options.branch}`
+                });
 
+                await this.octokit.rest.repos.createOrUpdateFileContents(
+                    {
+                        owner: this.options.owner,
+                        repo: this.options.repo,
+                        path: `${id}`,
+                        message: `Update ${id}`,
+                        sha: `${sha}`,
+                        content: Base64.encode(JSON.stringify(data)),
+                        branch: this.options.branch
+                    }
+                )
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
-    async update(id, data, callback) {
-        try {
-            const { data: { sha } } = await this.octokit.rest.repos.getContent({
-                owner: `${this.options.owner}`,
-                repo: `${this.options.repo}`,
-                path: `${id}`,
-                ref: `${this.options.branch}`
-            });
-
-            console.log('sha: ', sha);
-
-            await this.octokit.rest.repos.createOrUpdateFileContents(
-                {
-                    owner: this.options.owner,
-                    repo: this.options.repo,
+    async remove(id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const { data: { sha } } = await this.octokit.rest.repos.getContent({
+                    owner: `${this.options.owner}`,
+                    repo: `${this.options.repo}`,
                     path: `${id}`,
-                    message: `Update ${id}`,
-                    sha: `${sha}`,
-                    content: Base64.encode(JSON.stringify(data)),
-                    branch: this.options.branch
-                }
-            )
-            return callback(null, null);
-        } catch (error) {
-            return callback(error);
-        }
-    }
+                    ref: `${this.options.branch}`
+                });
 
-    async remove(id, callback) { 
-        try {
-            const { data: { sha } } = await this.octokit.rest.repos.getContent({
-                owner: `${this.options.owner}`,
-                repo: `${this.options.repo}`,
-                path: `${id}`,
-                ref: `${this.options.branch}`
-            });
-
-            console.log('sha: ', sha);
-
-            await this.octokit.rest.repos.deleteFile(
-                {
-                    owner: this.options.owner,
-                    repo: this.options.repo,
-                    path: `${id}`,
-                    message: `Remove ${id}`,
-                    sha: `${sha}`,
-                    branch: this.options.branch
-                }
-            )
-            return callback(null, null);
-        } catch (error) {
-            return callback(error);
-        }
+                await this.octokit.rest.repos.deleteFile(
+                    {
+                        owner: this.options.owner,
+                        repo: this.options.repo,
+                        path: `${id}`,
+                        message: `Remove ${id}`,
+                        sha: `${sha}`,
+                        branch: this.options.branch
+                    }
+                )
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
 }
