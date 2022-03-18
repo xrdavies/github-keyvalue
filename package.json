@@ -1,0 +1,16 @@
+{
+  "name": "github-db",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:xrdavies/github-db.git",
+  "author": "Frozen <xrdavies@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "dependencies": {
+    "d3-queue": "^3.0.7",
+    "dotenv": "^16.0.0",
+    "hat": "^0.0.3",
+    "octokit": "^1.7.1"
+  }
+}
