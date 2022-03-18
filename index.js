@@ -11,10 +11,13 @@ export class GitDB {
         this.octokit = new Octokit({ auth: `${options.token}` });
     }
 
+    async initdb() {
+        // TODO: create the db branch
+    }
+
     async list() {
         return new Promise(async (resolve, reject) => {
             let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
-            // console.log(tree);
             let q = queue(1);
             tree.filter(item => { return item.path.match(/json$/) }).forEach(item => {
                 q.defer(async (cb) => {
