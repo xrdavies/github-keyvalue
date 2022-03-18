@@ -4,7 +4,7 @@ import { queue } from 'd3-queue';
 import hat from "hat";
 import { Base64 } from 'js-base64';
 
-export class GitDB {
+export class GithubDB {
 
     constructor(options) {
         this.options = options;
