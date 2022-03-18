@@ -1,87 +1,135 @@
 import 'dotenv/config';
 import { Octokit, App } from "octokit";
 import { queue } from 'd3-queue';
-// import { Hat } from "hat";
+import hat from "hat";
+import { Base64 } from 'js-base64';
 
-// Create a personal access token at https://github.com/settings/tokens/new?scopes=repo
-const octokit = new Octokit({ auth: `${process.env.PERSONAL_TOKEN}` });
+export class GitDB {
 
-// Compare: https://docs.github.com/en/rest/reference/users#get-the-authenticated-user
-// {
-//     const {
-//         data: { login },
-//     } = await octokit.rest.users.getAuthenticated();
-//     console.log("Hello, %s", login);
-// }
+    constructor(options) {
+        this.options = options;
+        this.octokit = new Octokit({ auth: `${options.token}` });
+    }
 
-// get content
-{
-    const { data } = await octokit.rest.repos.getContent({
-        mediaType: {
-            format: "raw",
-        },
-        owner: "xrdavies",
-        repo: "github-db",
-        path: "/README.md",
-    });
-    console.log(data);
+    async list(callback) {
+        let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
+        console.log(tree);
+        let q = queue(1);
+        tree.filter(item => { return item.path.match(/json$/) }).forEach(item => {
+            q.defer(async (cb) => {
+                const { data } = await this.octokit.rest.repos.getContent({
+                    mediaType: {
+                        format: "raw",
+                    },
+                    owner: `${this.options.owner}`,
+                    repo: `${this.options.repo}`,
+                    path: `${item.path}`,
+                    ref: `${this.options.branch}`
+                });
+                return cb(null, { path: item.path, data: JSON.parse(data) });
+            })
+        })
 
-    console.log("package name: %s", data);
-}
+        q.awaitAll((err, res) => {
+            console.log('err:', err);
+            console.log('res', res);
 
-// get branch
-// {
-//     let {
-//         data
-//     } = await octokit.rest.repos.getBranch({ owner: "xrdavies", repo: "github-db", branch: "main" });
-//     console.log("get branch: ", data);
-// }
+            if (err) return callback(err);
+            return callback(null, res);
+        })
+    }
 
-// get tree
-{
-    let {
-        data
-    } = await octokit.rest.git.getTree({ owner: "xrdavies", repo: "github-db", tree_sha: "db", recursive: 1 });
-    console.log("get tree: ", data.tree);
 
-    let fileArray = data.tree.filter(item => { return item.path.match(/json$/) });
-    console.log("json file list:", fileArray);
-
-    let q = queue(1);
-    fileArray.forEach(item => {
-        q.defer( async (cb) => {
-            const { data } = await octokit.rest.repos.getContent({
+    async get(id, callback) {
+        try {
+            const { data } = await this.octokit.rest.repos.getContent({
                 mediaType: {
                     format: "raw",
                 },
-                owner: "xrdavies",
-                repo: "github-db",
-                path: item.path,
-                ref: "db"
+                owner: `${this.options.owner}`,
+                repo: `${this.options.repo}`,
+                path: `${id}`,
+                ref: `${this.options.branch}`
             });
-            return cb(null, data);
-        })
-    })
+            return callback(null, JSON.parse(data));
+        } catch (error) {
+            return callback(error);
+        }
+    }
 
-    q.awaitAll((err, res) => {
-        console.log('err:', err);
-        console.log('res:', JSON.parse(res));
-        ;
-    })
+    async add(data, callback) {
+        try {
+            var id = hat() + '.json';
+            await this.octokit.rest.repos.createOrUpdateFileContents(
+                {
+                    owner: this.options.owner,
+                    repo: this.options.repo,
+                    path: `${id}`,
+                    message: `Add ${id}`,
+                    content: Base64.encode(JSON.stringify(data)),
+                    branch: this.options.branch
+                }
+            )
+            return callback(null, null);
+        } catch (error) {
+            return callback(error);
+        }
+
+    }
+
+    async update(id, data, callback) {
+        try {
+            const { data: { sha } } = await this.octokit.rest.repos.getContent({
+                owner: `${this.options.owner}`,
+                repo: `${this.options.repo}`,
+                path: `${id}`,
+                ref: `${this.options.branch}`
+            });
+
+            console.log('sha: ', sha);
+
+            await this.octokit.rest.repos.createOrUpdateFileContents(
+                {
+                    owner: this.options.owner,
+                    repo: this.options.repo,
+                    path: `${id}`,
+                    message: `Update ${id}`,
+                    sha: `${sha}`,
+                    content: Base64.encode(JSON.stringify(data)),
+                    branch: this.options.branch
+                }
+            )
+            return callback(null, null);
+        } catch (error) {
+            return callback(error);
+        }
+    }
+
+    async remove(id, callback) { 
+        try {
+            const { data: { sha } } = await this.octokit.rest.repos.getContent({
+                owner: `${this.options.owner}`,
+                repo: `${this.options.repo}`,
+                path: `${id}`,
+                ref: `${this.options.branch}`
+            });
+
+            console.log('sha: ', sha);
+
+            await this.octokit.rest.repos.deleteFile(
+                {
+                    owner: this.options.owner,
+                    repo: this.options.repo,
+                    path: `${id}`,
+                    message: `Remove ${id}`,
+                    sha: `${sha}`,
+                    branch: this.options.branch
+                }
+            )
+            return callback(null, null);
+        } catch (error) {
+            return callback(error);
+        }
+    }
+
 }
-
-
-function get(id, callback) {
-    _getSHA(id, function (err, sha) {
-        if (err) return callback(err);
-        repo.git.blobs(sha).fetch(function (err, res) {
-            if (err) return callback(err);
-            callback(err, JSON.parse(atob(res.content)));
-        });
-    });
-}
-
-
-// export function gitdb(options) {
-//     var oct = Octokit.
-// }
