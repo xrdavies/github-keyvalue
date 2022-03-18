@@ -2,6 +2,7 @@
   "name": "github-db",
   "version": "1.0.0",
   "main": "index.js",
+  "description": "An opensource db backed by Github. Store and manage data with json format in repo with dedicate branch. It's quite convinent for CI/CD that you can just record and manage your data in github repo with github actions.",
   "repository": "git@github.com:xrdavies/github-db.git",
   "author": "Frozen <xrdavies@gmail.com>",
   "license": "MIT",
