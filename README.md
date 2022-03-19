@@ -1,4 +1,4 @@
-# Github-KV
+# Github-Keyvalue
 
 An opensource db backed by Github / Octkit. Store and manage data with `json` format in repo with dedicate branch. 
 
