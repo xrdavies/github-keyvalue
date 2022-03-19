@@ -1,14 +1,24 @@
 {
-  "name": "github-db",
+  "name": "github-kv",
   "version": "1.0.0",
   "main": "index.js",
-  "description": "An opensource db backed by Github. Store and manage data with json format in repo with dedicate branch. It's quite convinent for CI/CD that you can just record and manage your data in github repo with github actions.",
-  "repository": "git@github.com:xrdavies/github-db.git",
+  "description": "An opensource db backed by Github / Octkit. Store and manage data with json format in repo with dedicate branch. It's quite convinent for CI/CD that you can just record and manage your data in github repo with github actions.",
+  "repository": "git@github.com:xrdavies/github-kv.git",
+  "keywords": [
+    "github",
+    "db",
+    "octkit",
+    "kv",
+    "github-kv",
+    "github-actions"
+  ],
   "author": "Frozen <xrdavies@gmail.com>",
   "license": "MIT",
   "private": false,
   "type": "module",
+  "homepage": "https://github.com/xrdavies/github-kv",
   "dependencies": {
+    "@octokit/rest": "^18.12.0",
     "d3-queue": "^3.0.7",
     "dotenv": "^16.0.0",
     "hat": "^0.0.3",
