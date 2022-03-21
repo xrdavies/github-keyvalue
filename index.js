@@ -17,9 +17,10 @@ export class GithubKV {
 
     async list() {
         return new Promise(async (resolve, reject) => {
-            let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
+            // let { data: { tree } } = await this.octokit.rest.git.getTree({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, tree_sha: `${this.options.branch}`, recursive: 2 });
+            let { data  } = await this.octokit.rest.repos.getContent({ owner: `${this.options.owner}`, repo: `${this.options.repo}`, path: this.options.path, ref: `${this.options.branch}` });
             let q = queue(1);
-            tree.filter(item => { return item.path.match(/json$/) }).forEach(item => {
+            data.filter(item => { return item.path.match(/json$/) }).forEach(item => {
                 q.defer(async (cb) => {
                     const { data } = await this.octokit.rest.repos.getContent({
                         mediaType: {

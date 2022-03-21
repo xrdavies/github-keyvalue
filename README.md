@@ -9,10 +9,11 @@ It's quite convinent for CI/CD that you can just record and manage your data in 
 ### new GithubKV(options)
 ```
 new GithubKV({
-    token, // The personal access token of your account
-    owner, // The owner of this repo
-    repo, // The name of repo
-    branch // The branch stores the data
+    token, // The personal access token of your account (required)
+    owner, // The owner of this repo (required)
+    repo, // The name of repo (required)
+    branch, // The branch stores the data (requied)
+    path, // The path store the data (optional)
 })
 ```
 
@@ -20,6 +21,7 @@ new GithubKV({
 `owner` is name of the owner of your database repo. For example, if I want to have a db, it should be `owner: 'xrdavies'`.  
 `repo` is the name of your database repo. You can name it as you want.  
 `branch` is the branch where you put your data in your repo.  
+`path` is the path store data, it's optional. The default is the root folder of repo
 
 ### list() : Promise<T | undefined>
 List all the available records in db.

@@ -1,6 +1,6 @@
 {
   "name": "github-keyvalue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "description": "An opensource db backed by Github / Octkit. Store and manage data with json format in repo with dedicate branch. It's quite convinent for CI/CD that you can just record and manage your data in github repo with github actions.",
   "repository": "git@github.com:xrdavies/github-keyvalue.git",
