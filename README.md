@@ -6,6 +6,10 @@ It's quite convinent for CI/CD that you can just record and manage your data in 
 
 ## Usage
 
+### Install
+
+Run `npm i github-keyvalue` or `yarn add github-keyvalue` to install this package.
+
 ### new GithubKV(options)
 ```
 new GithubKV({
