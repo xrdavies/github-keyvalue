@@ -42,6 +42,9 @@ Update record according to `id`.
 ### remove(id) : Promise<T | undefined>
 Remove record according to `id`.
 
+# Use cases
+
+[DAOPark DB](https://github.com/Web3Camp-Labs/daopark-db)
 
 # Thanks to
 
